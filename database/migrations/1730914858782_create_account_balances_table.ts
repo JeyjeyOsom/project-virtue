@@ -9,7 +9,8 @@ export default class extends BaseSchema {
       table.string('address').notNullable()
       table.bigInteger('balance').notNullable()
       table.timestamp('timestamp').defaultTo(this.now())
-      table.timestamps(true)
+      table.dateTime('created_at', { useTz: true }).notNullable().defaultTo(this.now())
+      table.dateTime('updated_at', { useTz: true }).notNullable().defaultTo(this.now())
     })
   }
 

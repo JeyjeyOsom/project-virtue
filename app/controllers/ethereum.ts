@@ -19,6 +19,7 @@ export default class EthereumController {
 
       // Save balance to the database using the AccountBalance model
       await AccountBalance.create({ address, balance })
+      console.log(`Saved balance for address: ${address} with balance: ${balance}`)
 
       return response.json({ gasPrice, blockNumber, balance })
     } catch (error) {

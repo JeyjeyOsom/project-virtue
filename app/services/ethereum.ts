@@ -1,42 +1,42 @@
-// app/Services/EthereumService.ts
-import axios from 'axios'
 import redis from '@adonisjs/redis/services/main'
+import { Network, Alchemy } from 'alchemy-sdk'
+
+// Initialize Alchemy with your API key and network settings
+const settings = {
+  apiKey: process.env.ALCHEMY_API_KEY, // Make sure your Alchemy API key is in your .env file
+  network: Network.ETH_MAINNET,
+}
+const alchemy = new Alchemy(settings)
 
 export default class EthereumService {
-  private static async fetchFromAlchemy(endpoint: string) {
-    const alchemyApiKey = process.env.ALCHEMY_API_KEY
-    const response = await axios.get(
-      `https://eth-mainnet.alchemyapi.io/v2/${alchemyApiKey}/${endpoint}`
-    )
-    return response.data
-  }
-
   public static async getGasPrice() {
     const cachedGasPrice = await redis.get('gas_price')
     if (cachedGasPrice) return JSON.parse(cachedGasPrice)
 
-    const data = await this.fetchFromAlchemy('eth_gasPrice')
-    const gasPrice = Number.parseInt(data.result, 16) // Convert hex to decimal
+    // Fetch the gas price using Alchemy SDK
+    const gasPrice = await alchemy.core.getGasPrice()
+    const gasPriceInGwei = Number.parseInt(gasPrice.toString(), 10) / 1e9 // Convert to Gwei if needed
 
-    // Cache for 5 minutes
-    await redis.setex('gas_price', 300, JSON.stringify(gasPrice))
-    return gasPrice
+    // Cache the gas price for 5 minutes (300 seconds)
+    await redis.setex('gas_price', 300, JSON.stringify(gasPriceInGwei))
+    return gasPriceInGwei
   }
 
   public static async getCurrentBlockNumber() {
     const cachedBlock = await redis.get('block_number')
     if (cachedBlock) return JSON.parse(cachedBlock)
 
-    const data = await this.fetchFromAlchemy('eth_blockNumber')
-    const blockNumber = Number.parseInt(data.result, 16)
+    // Fetch the latest block number using Alchemy SDK
+    const blockNumber = await alchemy.core.getBlockNumber()
 
-    // Cache for 5 minutes
+    // Cache the block number for 5 minutess
     await redis.setex('block_number', 300, JSON.stringify(blockNumber))
     return blockNumber
   }
 
   public static async getAccountBalance(address: string) {
-    const data = await this.fetchFromAlchemy(`eth_getBalance?address=${address}&tag=latest`)
-    return Number.parseInt(data.result, 16) // Convert hex to decimal
+    // Fetch the account balance using Alchemy SDK
+    const balance = await alchemy.core.getBalance(address)
+    return Number.parseInt(balance.toString(), 10) // Convert to decimal format
   }
 }

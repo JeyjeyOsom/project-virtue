@@ -15,4 +15,4 @@ router.get('/', async () => {
   }
 })
 
-router.get('/ethereum', '#controllers/ethereum.handle')
+router.post('/ethereum', '#controllers/ethereum.handle')
